@@ -18,14 +18,17 @@ func main() {
 
 	totalValue := 0
 	scanner := bufio.NewScanner(file)
+	fullText := ""
 	for scanner.Scan() {
 		line := scanner.Text()
 
-		value := readLine(line)
-
-		totalValue += value
+		fullText = fullText + line
 
 	}
+
+	value := readLine(fullText)
+
+	totalValue += value
 
 	fmt.Println(totalValue)
 
@@ -36,19 +39,28 @@ func main() {
 
 func readLine(line string) int {
 	val := 0
-	r := regexp.MustCompile(`(mul\([0-9]*,[0-9]*\))`)
+	r := regexp.MustCompile(`(mul\([0-9]*,[0-9]*\))|(do\(\))|(don't\(\))`)
 
 	numberRegEx := regexp.MustCompile(`[0-9]+`)
 
 	matches := r.FindAllString(line, -1)
 
+	do := true
 	for _, match := range matches {
-		nums := numberRegEx.FindAllString(match, -1)
+		if match == "do()" {
+			do = true
+		} else if match == "don't()" {
+			do = false
+		} else {
+			if do {
+				nums := numberRegEx.FindAllString(match, -1)
 
-		num1, _ := strconv.Atoi(nums[0])
-		num2, _ := strconv.Atoi(nums[1])
+				num1, _ := strconv.Atoi(nums[0])
+				num2, _ := strconv.Atoi(nums[1])
 
-		val += num1 * num2
+				val += num1 * num2
+			}
+		}
 	}
 
 	//fmt.Println(matches)
