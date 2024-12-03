@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	file, err := os.Open("../files/day2/example.txt")
+	file, err := os.Open("../files/day2/day2.txt")
 
 	if err != nil {
 		log.Fatal(err)
@@ -20,9 +20,32 @@ func main() {
 	totalSafe := 0
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		isSafe := parseLine(scanner.Text())
+		line := scanner.Text()
 
-		if isSafe {
+		unsafe := true
+		index := -2
+
+		for unsafe {
+			numbers := strings.Fields(line)
+			index++
+
+			if index == len(numbers) {
+				break
+			}
+
+			isSafe := removeElementAndCheckResults(numbers, index)
+
+			if isSafe {
+				unsafe = false
+				break
+			}
+
+		}
+		//isSafe := parseLine(numbers, true)
+
+		//fmt.Println(line + " || " + strconv.FormatBool(!unsafe))
+
+		if !unsafe {
 			totalSafe++
 		}
 
@@ -35,9 +58,19 @@ func main() {
 	}
 }
 
-func parseLine(s string) bool {
+func removeElementAndCheckResults(tempNumbers []string, index int) bool {
+	if index > -1 {
+		tempNumbers = append(tempNumbers[:index], tempNumbers[index+1:]...)
+	}
+
+	//	fmt.Println(index)
+	//	fmt.Println(tempNumbers)
+	return parseLine(tempNumbers)
+
+}
+
+func parseLine(numbers []string) bool {
 	increasing := true
-	numbers := strings.Fields(s)
 
 	firstVal, _ := strconv.Atoi(numbers[0])
 	secondVal, _ := strconv.Atoi(numbers[1])
