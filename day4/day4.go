@@ -13,7 +13,7 @@ type Coordinate struct {
 }
 
 const (
-	NORTH = iota
+	NULL = iota
 	NORTHEAST
 	EAST
 	SOUTHEAST
@@ -58,100 +58,72 @@ func main() {
 	//for _, row := range wordSearch {
 	//	fmt.Printf("%q\n", row)
 	//}
-	totalMatches := findMatches(letterCoordinates, "XMAS")
+	totalMatches := findXMAS(letterCoordinates)
 
 	fmt.Println(totalMatches)
 }
 
-func findMatches(letterCoordinates map[rune][]Coordinate, word string) int {
-	if len(word) == 0 {
-		return 0
-	}
-
-	letterIndex := 0
-
-	letter := word[letterIndex]
-
-	firstLetterCoords := letterCoordinates[rune(letter)]
-
-	if len(firstLetterCoords) == 0 {
-		return 0
-	}
-
+func findXMAS(letterCoordinates map[rune][]Coordinate) int {
 	matches := 0
-	for _, coords := range firstLetterCoords {
-		if wordExists(letterCoordinates, letterIndex, word, coords, NORTH) {
-			matches++
+	aCoords := letterCoordinates[rune('A')]
+
+	possibleLetters := []rune{'M', 'S'}
+	for _, coords := range aCoords {
+
+		if isValid(letterCoordinates, coords, possibleLetters, NORTHWEST) {
+			if isValid(letterCoordinates, coords, possibleLetters, SOUTHWEST) {
+				matches++
+			}
 		}
-		if wordExists(letterCoordinates, letterIndex, word, coords, NORTHEAST) {
-			matches++
-		}
-		if wordExists(letterCoordinates, letterIndex, word, coords, EAST) {
-			matches++
-		}
-		if wordExists(letterCoordinates, letterIndex, word, coords, SOUTHEAST) {
-			matches++
-		}
-		if wordExists(letterCoordinates, letterIndex, word, coords, SOUTH) {
-			matches++
-		}
-		if wordExists(letterCoordinates, letterIndex, word, coords, SOUTHWEST) {
-			matches++
-		}
-		if wordExists(letterCoordinates, letterIndex, word, coords, WEST) {
-			matches++
-		}
-		if wordExists(letterCoordinates, letterIndex, word, coords, NORTHWEST) {
-			matches++
-		}
+
 	}
+
 	return matches
 }
 
-func wordExists(letterCoordinates map[rune][]Coordinate, letterIndex int, word string, coords Coordinate, direction int) bool {
-	letterIndex++
-	if letterIndex >= len(word) {
-		return true
-	}
-
-	letter := word[letterIndex]
-
-	letterCoords := letterCoordinates[rune(letter)]
-
+func isValid(letterCoordinates map[rune][]Coordinate, coords Coordinate, possibleLetters []rune, direction int) bool {
+	var nextDirection int
 	nextCoords := Coordinate{
 		x: coords.x,
 		y: coords.y,
 	}
 
 	switch direction {
-	case NORTH:
-		nextCoords.y--
+	case NULL:
+		return true
 	case NORTHEAST:
 		nextCoords.y--
 		nextCoords.x++
-	case EAST:
-		nextCoords.x++
+		nextDirection = NULL
 	case SOUTHEAST:
 		nextCoords.x++
 		nextCoords.y++
-	case SOUTH:
-		nextCoords.y++
+		nextDirection = NULL
 	case SOUTHWEST:
 		nextCoords.y++
 		nextCoords.x--
-	case WEST:
-		nextCoords.x--
+		nextDirection = NORTHEAST
 	case NORTHWEST:
 		nextCoords.y--
 		nextCoords.x--
+		nextDirection = SOUTHEAST
 	}
 
-	for _, c := range letterCoords {
-		if c.x == nextCoords.x && c.y == nextCoords.y {
-			return wordExists(letterCoordinates, letterIndex, word, c, direction)
+	for _, letter := range possibleLetters {
+		letterCoords := letterCoordinates[letter]
+
+		for _, c := range letterCoords {
+			if c.x == nextCoords.x &&
+				c.y == nextCoords.y {
+
+				remainingLetters := []rune{'S'}
+				if letter == 'S' {
+					remainingLetters = []rune{'M'}
+				}
+				return isValid(letterCoordinates, coords, remainingLetters, nextDirection)
+			}
 		}
 	}
 
 	return false
-
 }
