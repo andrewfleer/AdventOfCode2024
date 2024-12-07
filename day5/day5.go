@@ -37,11 +37,13 @@ func main() {
 
 	}
 
-	rulesMap := mapTheRules(updateRules)
+	rulesMapMustGoAfter, rulesMapMustGoBefore := mapTheRules(updateRules)
 
-	validUpdates := checkUpdates(rulesMap, updates)
+	invalidUpdates := checkUpdates(rulesMapMustGoAfter, updates)
 
-	middlePagesSum := processUpdates(validUpdates)
+	fixedUpdates := fixUpdates(rulesMapMustGoAfter, rulesMapMustGoBefore, invalidUpdates)
+
+	middlePagesSum := processUpdates(fixedUpdates)
 
 	fmt.Println(middlePagesSum)
 
@@ -50,25 +52,32 @@ func main() {
 	}
 }
 
-func mapTheRules(updateRules []string) map[string][]string {
-	rulesMap := make(map[string][]string)
+func mapTheRules(updateRules []string) (map[string][]string, map[string][]string) {
+	rulesMapAfter := make(map[string][]string)
+	rulesMapBefore := make(map[string][]string)
 	for _, rule := range updateRules {
 		pages := strings.Split(rule, "|")
 		page := pages[0]
 		laterPage := pages[1]
 
-		if rulesMap[laterPage] == nil {
-			rulesMap[laterPage] = []string{}
+		if rulesMapAfter[laterPage] == nil {
+			rulesMapAfter[laterPage] = []string{}
 		}
 
-		rulesMap[laterPage] = append(rulesMap[laterPage], page)
+		rulesMapAfter[laterPage] = append(rulesMapAfter[laterPage], page)
+
+		if rulesMapBefore[page] == nil {
+			rulesMapBefore[page] = []string{}
+		}
+
+		rulesMapBefore[page] = append(rulesMapBefore[page], laterPage)
 	}
 
-	return rulesMap
+	return rulesMapAfter, rulesMapBefore
 }
 
-func checkUpdates(rulesMap map[string][]string, updates []string) []string {
-	validUpdates := []string{}
+func checkUpdates(rulesMap map[string][]string, updates []string) [][]string {
+	invalidUpdates := [][]string{}
 
 	for _, update := range updates {
 		valid := true
@@ -90,20 +99,67 @@ func checkUpdates(rulesMap map[string][]string, updates []string) []string {
 				break
 			}
 		}
-		if valid {
-			validUpdates = append(validUpdates, update)
+		if !valid {
+			invalidUpdates = append(invalidUpdates, pages)
 		}
 	}
 
-	return validUpdates
+	return invalidUpdates
 }
 
-func processUpdates(validUpdates []string) int {
+func fixUpdates(rulesMapAfter, rulesMapBefore map[string][]string, invalidUpdates [][]string) [][]string {
+	fixedUpdates := [][]string{}
+
+	for _, update := range invalidUpdates {
+		fixedUpdate := []string{}
+
+		for i := len(update) - 1; i >= 0; i-- {
+			page := update[i]
+			if i == len(update)-1 {
+				fixedUpdate = append(fixedUpdate, page)
+				continue
+			}
+
+			minIndex := len(fixedUpdate) - 1
+			mustGoBeforePages := rulesMapBefore[page]
+			for i, fixedPage := range fixedUpdate {
+				if slices.Contains(mustGoBeforePages, fixedPage) {
+					if i < minIndex {
+						minIndex = i
+					}
+				}
+			}
+
+			mustGoAfterPages := rulesMapAfter[page]
+			maxIndex := 0
+			for i, updatePage := range fixedUpdate {
+				if slices.Contains(mustGoAfterPages, updatePage) {
+					if i+1 > maxIndex {
+						maxIndex = i + 1
+					}
+				}
+			}
+
+			indexToUse := maxIndex
+			if minIndex > indexToUse {
+				indexToUse = minIndex
+			}
+
+			fixedUpdate = append(fixedUpdate[:indexToUse], append([]string{page}, fixedUpdate[indexToUse:]...)...)
+		}
+
+		fixedUpdates = append(fixedUpdates, fixedUpdate)
+	}
+
+	return fixedUpdates
+}
+
+func processUpdates(validUpdates [][]string) int {
 	middlePageSum := 0
 
 	for _, update := range validUpdates {
-		pages := strings.Split(update, ",")
-		length := len(pages)
+
+		length := len(update)
 
 		if length == 0 {
 			continue
@@ -111,7 +167,7 @@ func processUpdates(validUpdates []string) int {
 
 		middleIndex := length / 2
 
-		middlePage, _ := strconv.Atoi(pages[middleIndex])
+		middlePage, _ := strconv.Atoi(update[middleIndex])
 
 		middlePageSum += middlePage
 	}
