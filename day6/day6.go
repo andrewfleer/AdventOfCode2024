@@ -48,32 +48,78 @@ func main() {
 
 func processMap(labMap [][]rune) int {
 	guard := Guard{}
+	slowGuard := Guard{}
+	fastGuard := Guard{}
 
 	for i, mapRow := range labMap {
 		if guardLocation := findGuard(mapRow); guardLocation > -1 {
 			guard.coordinate.x = guardLocation
 			guard.coordinate.y = i
 			guard.symbol = mapRow[guardLocation]
+
+			slowGuard = guard
+			fastGuard = guard
 		}
 	}
 
-	uniqueSpots := patrol(labMap, guard)
+	patrolMap := patrol(labMap, guard)
 
-	return uniqueSpots
+	// Brute Force!
+	loops := tryToMakeLoops(patrolMap, slowGuard, fastGuard)
+
+	return loops
 }
 
-func patrol(labMap [][]rune, guard Guard) int {
+func tryToMakeLoops(patrolMap [][]rune, slowGuard, fastGuard Guard) int {
+	loops := 0
+	for row := 0; row < len(patrolMap); row++ {
+		for column := 0; column < len(patrolMap[row]); column++ {
+			if patrolMap[row][column] == 'X' {
+
+				// copy the map
+				tempMap := make([][]rune, len(patrolMap))
+				for i := range patrolMap {
+					tempMap[i] = make([]rune, len(patrolMap[i]))
+					copy(tempMap[i], patrolMap[i])
+				}
+
+				tempMap[row][column] = '0'
+				isLoop := doGuardsMeet(tempMap, slowGuard, fastGuard)
+				if isLoop {
+					loops++
+				}
+			}
+		}
+	}
+
+	return loops
+}
+
+func doGuardsMeet(tempMap [][]rune, slowGuard, fastGuard Guard) bool {
 	guardOnScreen := true
 
 	for {
-		/*for row := 0; row < len(labMap); row++ {
-			for column := 0; column < len(labMap[row]); column++ {
-				fmt.Printf("%q ", labMap[row][column])
-			}
-			fmt.Print("\n")
+		_, fastGuard, _ = moveGuard(tempMap, fastGuard)
+		_, fastGuard, guardOnScreen = moveGuard(tempMap, fastGuard)
+		_, slowGuard, _ = moveGuard(tempMap, slowGuard)
+
+		if !guardOnScreen {
+			return false
 		}
 
-		fmt.Println("----------------------------------")*/
+		if fastGuard.coordinate.x == slowGuard.coordinate.x &&
+			fastGuard.coordinate.y == slowGuard.coordinate.y &&
+			fastGuard.symbol == slowGuard.symbol {
+			return true
+		}
+
+	}
+}
+
+func patrol(labMap [][]rune, guard Guard) [][]rune {
+	guardOnScreen := true
+
+	for {
 
 		labMap, guard, guardOnScreen = moveGuard(labMap, guard)
 
@@ -82,9 +128,16 @@ func patrol(labMap [][]rune, guard Guard) int {
 		}
 	}
 
-	uniqueSpots := countSpots(labMap)
+	/*uniqueSpots := countSpots(labMap)
 
-	return uniqueSpots
+	for row := 0; row < len(labMap); row++ {
+		for column := 0; column < len(labMap[row]); column++ {
+			fmt.Printf("%c", labMap[row][column])
+		}
+		fmt.Print("\n")
+	}*/
+
+	return labMap
 }
 
 func moveGuard(labMap [][]rune, guard Guard) ([][]rune, Guard, bool) {
@@ -96,9 +149,10 @@ func moveGuard(labMap [][]rune, guard Guard) ([][]rune, Guard, bool) {
 		return labMap, guard, false
 	}
 
-	if labMap[nextSpot.y][nextSpot.x] == '#' {
+	if labMap[nextSpot.y][nextSpot.x] == '#' ||
+		labMap[nextSpot.y][nextSpot.x] == '0' {
 		guard.symbol = turnGuard(guard.symbol)
-		labMap[guard.coordinate.y][guard.coordinate.x] = guard.symbol
+		//labMap[guard.coordinate.y][guard.coordinate.x] = guard.symbol
 
 		return labMap, guard, true
 	}
@@ -106,7 +160,7 @@ func moveGuard(labMap [][]rune, guard Guard) ([][]rune, Guard, bool) {
 	labMap[guard.coordinate.y][guard.coordinate.x] = 'X'
 	guard.coordinate.x = nextSpot.x
 	guard.coordinate.y = nextSpot.y
-	labMap[guard.coordinate.y][guard.coordinate.x] = guard.symbol
+	//labMap[guard.coordinate.y][guard.coordinate.x] = guard.symbol
 
 	return labMap, guard, true
 
