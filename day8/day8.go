@@ -57,48 +57,166 @@ func findAntinodes(runeMap map[rune][]Coordinate, mapWidth, mapHeight int) []Coo
 		}
 
 		for i, coord := range runes {
+			antinode := Coordinate{x: coord.x, y: coord.y}
+			if !slices.Contains(antinodes, antinode) {
+				antinodes = append(antinodes, antinode)
+			}
 			for j := i + 1; j < len(runes); j++ {
 				nextCoord := runes[j]
+
+				antinode = Coordinate{x: nextCoord.x, y: nextCoord.y}
+				if !slices.Contains(antinodes, antinode) {
+					antinodes = append(antinodes, antinode)
+				}
 
 				xDiff := math.Abs(float64(coord.x) - float64(nextCoord.x))
 				yDiff := math.Abs(float64(coord.y) - float64(nextCoord.y))
 
-				var antinode1, antinode2 Coordinate
+				// go "behind" the first coord
+				x := coord.x
+				y := coord.y
 
 				if coord.x < nextCoord.x {
-					antinode1.x = coord.x - int(xDiff)
-					antinode2.x = nextCoord.x + int(xDiff)
+					if coord.y < nextCoord.y {
+						for {
+							x -= int(xDiff)
+							y -= int(yDiff)
+							antinode.x = x
+							antinode.y = y
+
+							if antinode.x < 0 ||
+								antinode.y < 0 {
+								break
+							}
+
+							if !slices.Contains(antinodes, antinode) {
+								antinodes = append(antinodes, antinode)
+							}
+						}
+					} else {
+						for {
+							x -= int(xDiff)
+							y += int(yDiff)
+							antinode.x = x
+							antinode.y = y
+
+							if antinode.x < 0 ||
+								antinode.y >= mapHeight {
+								break
+							}
+
+							if !slices.Contains(antinodes, antinode) {
+								antinodes = append(antinodes, antinode)
+							}
+						}
+					}
 				} else {
-					antinode1.x = coord.x + int(xDiff)
-					antinode2.x = nextCoord.x - int(xDiff)
-				}
+					if coord.y < nextCoord.y {
+						for {
+							x += int(xDiff)
+							y -= int(yDiff)
+							antinode.x = x
+							antinode.y = y
 
-				if coord.y < nextCoord.y {
-					antinode1.y = coord.y - int(yDiff)
-					antinode2.y = nextCoord.y + int(yDiff)
-				} else {
-					antinode1.y = coord.y + int(yDiff)
-					antinode2.y = nextCoord.y - int(yDiff)
-				}
+							if antinode.x >= mapWidth ||
+								antinode.y < 0 {
+								break
+							}
 
-				// Check if the antinodes fit on the map.
-				if antinode1.x >= 0 &&
-					antinode1.x < mapWidth &&
-					antinode1.y >= 0 &&
-					antinode1.y < mapHeight {
+							if !slices.Contains(antinodes, antinode) {
+								antinodes = append(antinodes, antinode)
+							}
+						}
+					} else {
+						for {
+							x += int(xDiff)
+							y += int(yDiff)
+							antinode.x = x
+							antinode.y = y
 
-					if !slices.Contains(antinodes, antinode1) {
-						antinodes = append(antinodes, antinode1)
+							if antinode.x >= mapWidth ||
+								antinode.y >= mapHeight {
+								break
+							}
+
+							if !slices.Contains(antinodes, antinode) {
+								antinodes = append(antinodes, antinode)
+							}
+						}
 					}
 				}
 
-				if antinode2.x >= 0 &&
-					antinode2.x < mapWidth &&
-					antinode2.y >= 0 &&
-					antinode2.y < mapHeight {
+				// go "past" the next node
+				x = nextCoord.x
+				y = nextCoord.y
 
-					if !slices.Contains(antinodes, antinode2) {
-						antinodes = append(antinodes, antinode2)
+				if nextCoord.x < coord.x {
+					if nextCoord.y < coord.y {
+						for {
+							x -= int(xDiff)
+							y -= int(yDiff)
+							antinode.x = x
+							antinode.y = y
+
+							if antinode.x < 0 ||
+								antinode.y < 0 {
+								break
+							}
+
+							if !slices.Contains(antinodes, antinode) {
+								antinodes = append(antinodes, antinode)
+							}
+						}
+					} else {
+						for {
+							x -= int(xDiff)
+							y += int(yDiff)
+							antinode.x = x
+							antinode.y = y
+
+							if antinode.x < 0 ||
+								antinode.y >= mapHeight {
+								break
+							}
+
+							if !slices.Contains(antinodes, antinode) {
+								antinodes = append(antinodes, antinode)
+							}
+						}
+					}
+				} else {
+					if nextCoord.y < coord.y {
+						for {
+							x += int(xDiff)
+							y -= int(yDiff)
+							antinode.x = x
+							antinode.y = y
+
+							if antinode.x >= mapWidth ||
+								antinode.y < 0 {
+								break
+							}
+
+							if !slices.Contains(antinodes, antinode) {
+								antinodes = append(antinodes, antinode)
+							}
+						}
+					} else {
+						for {
+							x += int(xDiff)
+							y += int(yDiff)
+							antinode.x = x
+							antinode.y = y
+
+							if antinode.x >= mapWidth ||
+								antinode.y >= mapHeight {
+								break
+							}
+
+							if !slices.Contains(antinodes, antinode) {
+								antinodes = append(antinodes, antinode)
+							}
+						}
 					}
 				}
 			}
