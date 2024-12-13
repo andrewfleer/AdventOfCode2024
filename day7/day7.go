@@ -10,9 +10,10 @@ import (
 )
 
 type Node struct {
-	val   int
-	plus  *Node
-	times *Node
+	val    int
+	plus   *Node
+	times  *Node
+	concat *Node
 }
 
 func main() {
@@ -60,7 +61,11 @@ func isTreeValid(node *Node, answer int) bool {
 		return true
 	}
 
-	return isTreeValid(node.times, answer)
+	if isTreeValid(node.times, answer) {
+		return true
+	}
+
+	return isTreeValid(node.concat, answer)
 
 }
 
@@ -102,6 +107,10 @@ func insert(node *Node, number int) *Node {
 	node.plus.val = node.val + number
 	node.times = insert(node.times, number)
 	node.times.val = node.val * number
+	node.concat = insert(node.concat, number)
+	firstString := strconv.Itoa(node.val)
+	secondString := strconv.Itoa(number)
+	node.concat.val, _ = strconv.Atoi(firstString + secondString)
 
 	return node
 
