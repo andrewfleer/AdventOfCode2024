@@ -15,7 +15,7 @@ type Square struct {
 	south  *Square
 	west   *Square
 
-	visited bool
+	pathsToNine int
 }
 
 func main() {
@@ -41,7 +41,9 @@ func main() {
 	}
 
 	// Map trails
-	trails := mapTrails(volcanoMap)
+	mapTrails(volcanoMap)
+
+	trails := countTrails(volcanoMap)
 
 	fmt.Println(trails)
 
@@ -50,62 +52,56 @@ func main() {
 	}
 }
 
-func mapTrails(volcanoMap [][]*Square) int {
+func countTrails(volcanoMap [][]*Square) int {
 	trails := 0
 	for _, row := range volcanoMap {
 		for _, square := range row {
 			if square.height == 0 {
-				trails += attemptToMapTrail(square)
-				resetTrails(volcanoMap)
+				trails += square.pathsToNine
 			}
 		}
 	}
+
 	return trails
 }
 
-func resetTrails(volcanoMap [][]*Square) {
+func mapTrails(volcanoMap [][]*Square) {
 	for _, row := range volcanoMap {
 		for _, square := range row {
-			square.visited = false
+			if square.height == 9 {
+				attemptToMapTrail(square)
+			}
 		}
 	}
+
 }
 
-func attemptToMapTrail(square *Square) int {
+func attemptToMapTrail(square *Square) {
 	height := square.height
 
-	if height == 9 {
-		if !square.visited {
-			square.visited = true
-			return 1
-		}
-
-		return 0
-	}
-
-	trails := 0
-
 	if square.north != nil &&
-		square.north.height == height+1 {
-		trails += attemptToMapTrail(square.north)
+		square.north.height == height-1 {
+		square.north.pathsToNine += 1
+		attemptToMapTrail(square.north)
 	}
 
 	if square.east != nil &&
-		square.east.height == height+1 {
-		trails += attemptToMapTrail(square.east)
+		square.east.height == height-1 {
+		square.east.pathsToNine += 1
+		attemptToMapTrail(square.east)
 	}
 
 	if square.south != nil &&
-		square.south.height == height+1 {
-		trails += attemptToMapTrail(square.south)
+		square.south.height == height-1 {
+		square.south.pathsToNine += 1
+		attemptToMapTrail(square.south)
 	}
 
 	if square.west != nil &&
-		square.west.height == height+1 {
-		trails += attemptToMapTrail(square.west)
+		square.west.height == height-1 {
+		square.west.pathsToNine += 1
+		attemptToMapTrail(square.west)
 	}
-
-	return trails
 }
 
 func buildMap(volcanoMap [][]*Square, row []rune, rowNum int) [][]*Square {
