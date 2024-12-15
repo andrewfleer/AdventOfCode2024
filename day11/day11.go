@@ -31,51 +31,56 @@ func main() {
 		}
 	}
 
-	timesToBlink := 25
+	timesToBlink := 75
 	//fmt.Println(stones)
-	for i := 0; i < timesToBlink; i++ {
-		stones = blink(stones)
+	numStones := 0
 
-		//fmt.Println(stones)
+	for _, stone := range stones {
+		numStones += blinkCache(stone, timesToBlink)
 	}
 
-	fmt.Println(len(stones))
+	fmt.Println(numStones)
 
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func blink(stones []int) []int {
-	for i := 0; i < len(stones); i++ {
-		stone := stones[i]
-		if stone == 0 {
-			stone = 1
-			stones[i] = stone
-		} else {
-			digits := []rune(strconv.Itoa(stone))
-			if len(digits)%2 == 0 {
-				split := len(digits) / 2
+type StoneBlinkResult struct {
+	Value     int
+	NumBlinks int
+}
 
-				stone1, _ := strconv.Atoi(string(digits[:split]))
-				stone2, _ := strconv.Atoi(string(digits[split:]))
+var blinkCacher = make(map[StoneBlinkResult]int)
 
-				//insert first stone
-				if i == 0 {
-					stones = append([]int{stone1}, stones...)
-				} else {
-					stones = append(stones[:i], append([]int{stone1}, stones[i:]...)...)
-				}
-
-				// Replace stone with the second stone
-				stones[i+1] = stone2
-				i++
-			} else {
-				stone *= 2024
-				stones[i] = stone
-			}
-		}
+func blinkCache(stone int, timesToBlink int) int {
+	if c, ok := blinkCacher[StoneBlinkResult{Value: stone, NumBlinks: timesToBlink}]; ok {
+		return c
 	}
 
-	return stones
+	if timesToBlink == 0 {
+		return 1
+	}
+
+	if stone == 0 {
+		return blinkCache(1, timesToBlink-1)
+	} else {
+		digits := []rune(strconv.Itoa(stone))
+		if len(digits)%2 == 0 {
+			split := len(digits) / 2
+
+			stone1, _ := strconv.Atoi(string(digits[:split]))
+			stone2, _ := strconv.Atoi(string(digits[split:]))
+
+			newStones := blinkCache(stone1, timesToBlink-1) + blinkCache(stone2, timesToBlink-1)
+			blinkCacher[StoneBlinkResult{Value: stone, NumBlinks: timesToBlink}] = newStones
+
+			return newStones
+		} else {
+			newStones := blinkCache(stone*2024, timesToBlink-1)
+			blinkCacher[StoneBlinkResult{Value: stone, NumBlinks: timesToBlink}] = newStones
+
+			return newStones
+		}
+	}
 }
