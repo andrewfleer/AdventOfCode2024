@@ -8,15 +8,13 @@ import (
 )
 
 type Square struct {
-	plotType rune
-	north    *Square
-	east     *Square
-	south    *Square
-	west     *Square
+	plotType                       rune
+	north, east, south, west       *Square
+	nFence, eFence, sFence, wFence bool
+	visited                        bool
 
-	x, y    int
-	fences  int
-	visited bool
+	// For debugging
+	x, y int
 }
 
 func main() {
@@ -47,22 +45,22 @@ func main() {
 }
 
 func calculateFenceCost(gardenMap [][]*Square) int {
-	fenceCost := 0
+	totalCost := 0
 	for _, row := range gardenMap {
 		for _, square := range row {
 			if !square.visited {
-				plotFences, area := makePlot(square, square.plotType)
-
-				fenceCost += (plotFences * area)
+				corners, area := makePlot(square, square.plotType)
+				plotCost := (corners * area)
+				totalCost += plotCost
 			}
 		}
 	}
 
-	return fenceCost
+	return totalCost
 }
 
 func makePlot(square *Square, plotType rune) (int, int) {
-	fences := 0
+	corners := 0
 	area := 0
 
 	if square != nil &&
@@ -71,37 +69,99 @@ func makePlot(square *Square, plotType rune) (int, int) {
 		square.visited = true
 
 		// check north
-		nFences, nArea := makePlot(square.north, square.plotType)
-		fences += nFences
+		nCorners, nArea := makePlot(square.north, square.plotType)
+		corners += nCorners
 		area += nArea
 
 		// check east
-		eFences, eArea := makePlot(square.east, square.plotType)
-		fences += eFences
+		eCorners, eArea := makePlot(square.east, square.plotType)
+		corners += eCorners
 		area += eArea
 
 		// check south
-		sFences, sArea := makePlot(square.south, square.plotType)
-		fences += sFences
+		sCorners, sArea := makePlot(square.south, square.plotType)
+		corners += sCorners
 		area += sArea
 
 		// check west
-		wFences, wArea := makePlot(square.west, square.plotType)
-		fences += wFences
+		wCorners, wArea := makePlot(square.west, square.plotType)
+		corners += wCorners
 		area += wArea
 
 		// add this plot
-		fences += square.fences
 		area++
+
+		// look for containing-corners
+		if square.nFence {
+			if square.eFence {
+				corners++
+			}
+
+			if square.wFence {
+				corners++
+			}
+		}
+
+		if square.sFence {
+			if square.eFence {
+				corners++
+			}
+			if square.wFence {
+				corners++
+			}
+		}
+
+		// Look for extruding corners
+		nSquare := square.north
+		eSquare := square.east
+		sSquare := square.south
+		wSquare := square.west
+
+		if nSquare != nil &&
+			// Northeast
+			nSquare.plotType == square.plotType {
+			if eSquare != nil &&
+				eSquare.plotType == square.plotType {
+				if nSquare.eFence && eSquare.nFence {
+					corners++
+				}
+			}
+			// Northwest
+			if wSquare != nil &&
+				wSquare.plotType == square.plotType {
+				if nSquare.wFence && wSquare.nFence {
+					corners++
+				}
+			}
+		}
+
+		if sSquare != nil &&
+			sSquare.plotType == square.plotType {
+			// Southeast
+			if eSquare != nil &&
+				eSquare.plotType == square.plotType {
+				if sSquare.eFence && eSquare.sFence {
+					corners++
+				}
+			}
+
+			// Southwest
+			if wSquare != nil &&
+				wSquare.plotType == square.plotType {
+				if sSquare.wFence && wSquare.sFence {
+					corners++
+				}
+			}
+		}
 	}
-	return fences, area
+	return corners, area
 }
 
 func buildMap(gardenMap [][]*Square, row []rune, rowNum int) [][]*Square {
 	mapRow := []*Square{}
 
 	for i, r := range row {
-		square := &Square{plotType: r, fences: 4, y: rowNum, x: i}
+		square := &Square{plotType: r, nFence: true, eFence: true, sFence: true, wFence: true, y: rowNum, x: i}
 
 		// set North
 		if rowNum != 0 {
@@ -129,8 +189,8 @@ func link(from *Square, to *Square, direction string) {
 
 		// Remove fences if plots match
 		if to.plotType == from.plotType {
-			from.fences--
-			to.fences--
+			from.nFence = false
+			to.sFence = false
 		}
 	case "west":
 		from.west = to
@@ -138,8 +198,8 @@ func link(from *Square, to *Square, direction string) {
 
 		// Remove fences if plots match
 		if to.plotType == from.plotType {
-			from.fences--
-			to.fences--
+			from.wFence = false
+			to.eFence = false
 		}
 	}
 }
