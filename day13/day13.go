@@ -51,8 +51,8 @@ func main() {
 			xVal, _ := strconv.Atoi(strings.Split(xAndY[0], "=")[1])
 			yVal, _ := strconv.Atoi(strings.Split(xAndY[1], "=")[1])
 
-			prize.x = xVal
-			prize.y = yVal
+			prize.x = xVal + 10000000000000
+			prize.y = yVal + 10000000000000
 
 			cost := playGame(aButton, bButton, prize)
 
@@ -103,10 +103,10 @@ func playGame(aButton, bButton Button, prize Prize) int {
 
 	timesToPressA := aDividend / aDivisor
 
-	if timesToPressB > 100 ||
+	/*if timesToPressB > 100 ||
 		timesToPressA > 100 {
 		return -1
-	}
+	}*/
 
 	cost = timesToPressA*aButton.cost + timesToPressB*bButton.cost
 
